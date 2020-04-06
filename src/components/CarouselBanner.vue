@@ -1,107 +1,43 @@
 <template>
   <!-- Women Banner Section Begin -->
   <section class="women-banner spad">
-    <div class="container-fluid">
+    <div class="container-fluid" id="cf">
       <div class="row">
-        <div class="col-lg-12 mt-5">
-          <carousel class="product-slider" :items="3" :autoplay="true" :nav="false">
-            <div class="product-item">
+        <div class="col-lg-12 mt-5" v-if="products.length > 0">
+          <carousel class="product-slider" :items="3" :dots="false" :autoplay="true" :nav="false">
+            <div class="product-item" v-for="itemProduct in products" v-bind:key="itemProduct.id">
               <div class="pi-pic">
-                <img src="img/cloth/jaket_zara1-1.jpg" alt />
+                <!-- ambill array 0(array pertama)karena foto productnya bisa banyak -->
+                <img v-bind:src="itemProduct.galleries[0].photo" alt />
                 <ul>
-                  <li class="w-icon active">
+                  <li
+                    @click="saveKeranjang(itemProduct.id, itemProduct.name, itemProduct.price, itemProduct.galleries[0].photo)"
+                    class="w-icon active"
+                  >
                     <a href="#">
                       <i class="icon_bag_alt"></i>
                     </a>
                   </li>
                   <li class="quick-view">
-                    <router-link to="/product">+ Quick View</router-link>
+                    <router-link v-bind:to="'/product/'+itemProduct.id">+ Quick View</router-link>
                   </li>
                 </ul>
               </div>
               <div class="pi-text">
-                <div class="catagory-name">Jaket</div>
+                <div class="catagory-name">{{ itemProduct.type }}</div>
                 <a href="#">
-                  <h5>TWEED JACKET</h5>
+                  <h5>{{ itemProduct.name }}</h5>
                 </a>
                 <div class="product-price">
-                  $30.00
+                  ${{ itemProduct.price }}
                   <span>$35.00</span>
                 </div>
               </div>
             </div>
-            <div class="product-item">
-              <div class="pi-pic">
-                <img src="img/cloth/jaket_zara2-1.jpg" alt />
-                <ul>
-                  <li class="w-icon active">
-                    <a href="#">
-                      <i class="icon_bag_alt"></i>
-                    </a>
-                  </li>
-                  <li class="quick-view">
-                    <a href="#">+ Quick View</a>
-                  </li>
-                </ul>
-              </div>
-              <div class="pi-text">
-                <div class="catagory-name">Shoes</div>
-                <a href="#">
-                  <h5>Guangzhou sweater</h5>
-                </a>
-                <div class="product-price">$13.00</div>
-              </div>
-            </div>
-            <div class="product-item">
-              <div class="pi-pic">
-                <img src="img/cloth/jaket_zara3-1.jpg" alt />
-                <ul>
-                  <li class="w-icon active">
-                    <a href="#">
-                      <i class="icon_bag_alt"></i>
-                    </a>
-                  </li>
-                  <li class="quick-view">
-                    <a href="#">+ Quick View</a>
-                  </li>
-                </ul>
-              </div>
-              <div class="pi-text">
-                <div class="catagory-name">Towel</div>
-                <a href="#">
-                  <h5>Pure Pineapple</h5>
-                </a>
-                <div class="product-price">$34.00</div>
-              </div>
-            </div>
-            <div class="product-item">
-              <div class="pi-pic">
-                <img src="img/cloth/jaket_zara4-1.jpg" alt />
-                <ul>
-                  <li class="w-icon active">
-                    <a href="#">
-                      <i class="icon_bag_alt"></i>
-                    </a>
-                  </li>
-                  <li class="quick-view">
-                    <a href="#">+ Quick View</a>
-                  </li>
-                  <li class="w-icon">
-                    <a href="#">
-                      <i class="fa fa-random"></i>
-                    </a>
-                  </li>
-                </ul>
-              </div>
-              <div class="pi-text">
-                <div class="catagory-name">Towel</div>
-                <a href="#">
-                  <h5>Converse Shoes</h5>
-                </a>
-                <div class="product-price">$34.00</div>
-              </div>
-            </div>
           </carousel>
+        </div>
+        <div class="col lg-12" v-else>
+          <p>Product Terbaru belum tersedia untuk saat ini</p>
         </div>
       </div>
     </div>
@@ -111,11 +47,53 @@
 
 <script>
 import carousel from "vue-owl-carousel"; // <- depedencies (javascript carousel untuk vue)
+import axios from "axios"; // <- untuk API
 
 export default {
   name: "CarouselBanner",
   components: {
     carousel
+  },
+  data() {
+    return {
+      products: [],
+      keranjangUser: []
+    };
+  },
+  mounted() {
+    axios
+      .get("http://127.0.0.1:8000/api/products")
+      .then(res => (this.products = res.data.data.data))
+      // eslint-disable-next-line no-console
+      .catch(err => console.log(err));
+
+    if (localStorage.getItem("keranjangUser")) {
+      try {
+        this.keranjangUser = JSON.parse(localStorage.getItem("keranjangUser"));
+      } catch (e) {
+        localStorage.removeItem("keranjangUser");
+      }
+    }
+  },
+  methods: {
+    // keranjang
+    saveKeranjang(idProduct, nameProduct, priceProduct, photoProduct) {
+      var productStored = {
+        id: idProduct,
+        name: nameProduct,
+        price: priceProduct,
+        photo: photoProduct
+      };
+
+      this.keranjangUser.push(productStored);
+      const parsed = JSON.stringify(this.keranjangUser);
+      localStorage.setItem("keranjangUser", parsed);
+      window.location.reload();
+
+      var cf = this.$el.querySelector("#cf");
+      cf.scrollTop = cf.scrollHeight;
+    }
+    //end keranjang
   }
 };
 </script>
@@ -124,4 +102,7 @@ export default {
 .product-item {
   margin-right: 25px;
 }
+/* .pi-pic img {
+  height: 450px;
+} */
 </style>
